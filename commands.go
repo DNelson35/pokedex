@@ -10,12 +10,12 @@ import (
 	pokecache "github.com/DNelson35/pokedex/internal"
 )
 
+var baseUrl = "https://pokeapi.co/api/v2/location-area"
 type config struct {
 	Next string  
 	Prev string  
 	Cache *pokecache.Cache
 }
-
 type PokemonLocationData struct {
 	Count      int         `json:"count"`
 	Next string `json:"next"`
@@ -36,6 +36,9 @@ func commandHelp (cfg *config) error {
 	fmt.Println("Welcome to the Pokedex!\nUsage:")
 	fmt.Println()
 	for _, com := range getCommands() {
+		fmt.Printf("%v: %v\n", com.name, com.description)
+	}
+	for _, com := range getComandsWithArgs(){
 		fmt.Printf("%v: %v\n", com.name, com.description)
 	}
 	return nil
@@ -65,7 +68,7 @@ func commandMap (cfg *config) error {
 	if cfg.Next != ""{
 		resp, err = http.Get(cfg.Next)
 	}else {
-		resp, err = http.Get("https://pokeapi.co/api/v2/location-area")
+		resp, err = http.Get(baseUrl)
 	}
 
   
@@ -144,6 +147,46 @@ func commandMapb (cfg *config) error{
 	for _, res := range locationData.Results {
 		fmt.Println(res.Name)
 	}
+	return nil
+}
+
+type Pokemon struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+type LocationAreaEncounter struct {
+	PokemonEncountersList []struct {
+		Pokemon Pokemon `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+}
+
+func commandExplore(loc string) error{
+	endpoint := baseUrl + "/" + loc
+	resp, err := http.Get(endpoint)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK{
+		return fmt.Errorf("Status code: %v", resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var encounters LocationAreaEncounter
+	if err = json.Unmarshal(body, &encounters); err != nil {
+		return err
+	}
+
+	fmt.Printf("Exploring %v...\n", loc)
+	fmt.Println("Found Pokemon:")
+	for _, pokeinfo := range encounters.PokemonEncountersList {
+		fmt.Printf("- %v\n",pokeinfo.Pokemon.Name)
+	}
+
 	return nil
 }
 
