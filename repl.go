@@ -5,6 +5,8 @@ import (
 	"strings"
 	"bufio"
 	"os"
+	"time"
+	"github.com/DNelson35/pokedex/internal"
 )
 
 // strings.Fields would have gave the same result
@@ -36,7 +38,10 @@ type cliCommands struct {
 
 func startRepl() {
 	reader := bufio.NewScanner(os.Stdin)
-	cfg := &config{}
+	cfg := &config{
+		Cache: pokecache.NewCache(5 * time.Second),
+	}
+	
 	for {
 		fmt.Print("Pokedex > ")
 		reader.Scan()
