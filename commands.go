@@ -41,6 +41,11 @@ func commandMap (cfg *config) error {
 	var resp *http.Response
 	var err error
 	
+	// data, exist := cache.Entry[cfg.Next]
+	// if exist {
+		
+	// }
+
 	if cfg.Next != ""{
 		resp, err = http.Get(cfg.Next)
 	}else {
