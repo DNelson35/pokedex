@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"math/rand"
+	"time"
 
 	pokecache "github.com/DNelson35/pokedex/internal"
 )
@@ -150,14 +152,14 @@ func commandMapb (cfg *config) error{
 	return nil
 }
 
-type Pokemon struct {
+type PokemonAtLocation struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
 
 type LocationAreaEncounter struct {
 	PokemonEncountersList []struct {
-		Pokemon Pokemon `json:"pokemon"`
+		Pokemon PokemonAtLocation `json:"pokemon"`
 	} `json:"pokemon_encounters"`
 }
 
@@ -190,3 +192,93 @@ func commandExplore(loc string) error{
 	return nil
 }
 
+type Stat struct {
+	Name string `json:"name"`
+}
+type Stats struct {
+	BaseStat int 	`json:"base_stat"`
+	Stat 		 Stat `json:"stat"`
+}
+
+type Type struct {
+	Name string `json:"name"`
+}
+type Types struct {
+	Type Type `json:"type"`
+}
+type Pokemon struct {
+	Name 		string 	`json:"name"`
+	BaseXp 	int  	 	`json:"base_experience"`
+	Height 	int		 	`json:"height"`
+	Weight  int  		`json:"weight"`
+	Stats   []Stats	`json:"stats"`
+	Types 	[]Types `json:"types"`
+}
+
+var caughtlist = make(map[string]Pokemon)
+
+func CommandCatch (name string) error{
+	fullUrl := "https://pokeapi.co/api/v2/pokemon/" + name
+	resp, err := http.Get(fullUrl)
+	if err != nil{
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Status code: %v", resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	var pokemon Pokemon
+	if err = json.Unmarshal(body, &pokemon); err != nil {
+		return err
+	}
+	fmt.Printf("Throwing a Pokeball at %v...\n", pokemon.Name)
+
+	caught := isCaught(pokemon.BaseXp)
+	if caught{
+		fmt.Printf("%v was caught!\n", pokemon.Name)
+		caughtlist[pokemon.Name] = pokemon
+	} else {
+		fmt.Printf("%v escaped!\n", pokemon.Name)
+	}
+	return nil
+}
+
+func isCaught(basexp int) bool {
+	minProb := 1.0 / 3.0 
+	maxProb := 1.0 / 5.0 
+
+	prob := maxProb + (minProb-maxProb)/(float64(basexp)+1.0)
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomVal := r.Float64() 
+
+	return randomVal < prob
+}
+
+func CommandInspect (name string) error{
+	pokemon, exist := caughtlist[name]
+	if !exist {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+	fmt.Printf("Name: %v\n", pokemon.Name)	
+	fmt.Printf("Height: %d\n", pokemon.Height)	
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats:")	
+	for _, stat := range pokemon.Stats {
+		fmt.Printf("-%v: %d\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")	
+	for _, t := range pokemon.Types {
+		fmt.Printf("- %v\n", t.Type.Name)	
+	}
+
+	return nil
+}

@@ -118,6 +118,16 @@ func getComandsWithArgs() map[string]cliCommandsWithArgs {
 			description: "prints pokemon in a location",
 			callback: commandExplore,
 		},
+		"catch": {
+			name: "catch",
+			description: "throws a pokeball at named pokemon",
+			callback: CommandCatch,
+		},
+		"inspect": {
+			name: "inspect",
+			description: "read stats of caught pokemon",
+			callback: CommandInspect,
+		},
 	}
 }
 
