@@ -34,6 +34,12 @@ type cliCommands struct {
 	callback 		func(*config) error
 }
 
+type cliCommandsWithArgs struct {
+	name				string
+	description string
+	callback		func(string) error
+}
+
 
 
 func startRepl() {
@@ -61,10 +67,21 @@ func startRepl() {
 				fmt.Println(err)
 			}
 			continue
-		} else {
-			fmt.Println("Unknown command")
-			continue
+		}else {
+			commandWithArgs, exists := getComandsWithArgs()[commandName]
+			arg := words[1]
+			if exists {
+				err := commandWithArgs.callback(arg)
+				if err != nil {
+					fmt.Println(err)
+				}
+				continue
+			} else {
+				fmt.Println("Unknown command")
+				continue
+			}
 		}
+		
 	}
 }
 
@@ -90,6 +107,16 @@ func getCommands() map[string]cliCommands {
 			name: 			 "mapb",
 			description: "display last set of locations",
 			callback: commandMapb,
+		},
+	}
+}
+
+func getComandsWithArgs() map[string]cliCommandsWithArgs {
+	return map[string]cliCommandsWithArgs{
+		"explore": {
+			name: "explore",
+			description: "prints pokemon in a location",
+			callback: commandExplore,
 		},
 	}
 }
