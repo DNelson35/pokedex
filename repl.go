@@ -8,6 +8,8 @@ import (
 )
 
 // strings.Fields would have gave the same result
+
+
 func cleanInput(txt string) []string {
 	var wordArr []string
 	if len(txt) == 0 {
@@ -24,18 +26,52 @@ func cleanInput(txt string) []string {
 	return wordArr
 }
 
-func startRepl(){
-	scanner := bufio.NewScanner(os.Stdin)
-	
+type cliCommands struct {
+	name				string
+	description string
+	callback 		func() error
+}
+
+func startRepl() {
+	reader := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
-		if scanner.Scan(){
-			result := cleanInput(scanner.Text())
-			if len(result) == 0 {
-				fmt.Println("no input detected")
-			} else {
-				fmt.Printf("Your command was: %v\n", result[0])
+		reader.Scan()
+
+		words := cleanInput(reader.Text())
+		if len(words) == 0 {
+			continue
+		}
+
+		commandName := words[0]
+
+		command, exists := getCommands()[commandName]
+		if exists {
+			err := command.callback()
+			if err != nil {
+				fmt.Println(err)
 			}
+			continue
+		} else {
+			fmt.Println("Unknown command")
+			continue
 		}
 	}
 }
+
+
+func getCommands() map[string]cliCommands {
+	return map[string]cliCommands{
+		"help": {
+			name:        "help",
+			description: "Displays a help message",
+			callback:    commandHelp,
+		},
+		"exit": {
+			name:        "exit",
+			description: "Exit the Pokedex",
+			callback:    commandExit,
+		},
+	}
+}
+
