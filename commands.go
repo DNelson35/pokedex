@@ -6,11 +6,14 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	pokecache "github.com/DNelson35/pokedex/internal"
 )
 
 type config struct {
 	Next string  
 	Prev string  
+	Cache *pokecache.Cache
 }
 
 type PokemonLocationData struct {
@@ -30,7 +33,8 @@ func commandExit (cfg *config) error {
 }
 
 func commandHelp (cfg *config) error {
-	fmt.Println("Welcome to the Pokedex!\nUsage:\n")
+	fmt.Println("Welcome to the Pokedex!\nUsage:")
+	fmt.Println()
 	for _, com := range getCommands() {
 		fmt.Printf("%v: %v\n", com.name, com.description)
 	}
@@ -41,10 +45,22 @@ func commandMap (cfg *config) error {
 	var resp *http.Response
 	var err error
 	
-	// data, exist := cache.Entry[cfg.Next]
-	// if exist {
-		
-	// }
+	data, exist := cfg.Cache.Entry[cfg.Next]
+	if exist {
+		var locationData PokemonLocationData
+		if err := json.Unmarshal(data.Val, &locationData); err != nil {
+			return fmt.Errorf("failed to unmarshal cached data: %v", err)
+		}
+
+		for _, res := range locationData.Results {
+			fmt.Println(res.Name)
+		}
+
+		cfg.Next = locationData.Next
+		cfg.Prev = locationData.Prev
+
+		return nil
+	}
 
 	if cfg.Next != ""{
 		resp, err = http.Get(cfg.Next)
@@ -74,7 +90,7 @@ func commandMap (cfg *config) error {
 
 	cfg.Next = locationData.Next
 	cfg.Prev = locationData.Prev
-	fmt.Println(cfg.Next)
+	cfg.Cache.Add(resp.Request.URL.String(), body)
 
 	for _, res := range locationData.Results{
 		fmt.Println(res.Name)
@@ -87,6 +103,21 @@ func commandMapb (cfg *config) error{
 		fmt.Println("you're on the first page")
 		return nil
 	}
+	data, exist := cfg.Cache.Entry[cfg.Prev]
+	if exist {
+		var locationData PokemonLocationData
+		if err := json.Unmarshal(data.Val, &locationData); err != nil {
+			return fmt.Errorf("failed to unmarshal cached data: %v", err)
+		}
+
+		for _, res := range locationData.Results {
+			fmt.Println(res.Name)
+		}
+		cfg.Next = locationData.Next
+		cfg.Prev = locationData.Prev
+		return nil
+	}
+
 	resp, err := http.Get(cfg.Prev)
 	if err != nil {
 		return err
@@ -108,6 +139,7 @@ func commandMapb (cfg *config) error{
 	}
 	cfg.Next = locationData.Next
 	cfg.Prev = locationData.Prev
+	cfg.Cache.Add(resp.Request.URL.String(), body)
 
 	for _, res := range locationData.Results {
 		fmt.Println(res.Name)
