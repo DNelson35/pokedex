@@ -282,3 +282,15 @@ func CommandInspect (name string) error{
 
 	return nil
 }
+
+func CommandPokedex (*config) error {
+	fmt.Println("Your Pokedex:")
+	if len(caughtlist) == 0 {
+		fmt.Println("no pokemon in pokedex")
+		return nil
+	}
+	for _, pokemon := range caughtlist{
+		fmt.Printf("- %v\n", pokemon.Name)
+	}
+	return nil
+}

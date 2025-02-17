@@ -108,6 +108,11 @@ func getCommands() map[string]cliCommands {
 			description: "display last set of locations",
 			callback: commandMapb,
 		},
+		"pokedex": {
+			name: 			 "pokedex",
+			description: "prints all pokemon in pokedex",
+			callback:    CommandPokedex,
+		},
 	}
 }
 
