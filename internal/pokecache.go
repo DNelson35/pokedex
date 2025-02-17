@@ -19,7 +19,7 @@ type Cache struct {
 
 type cacheEntry struct {
 	createdAt time.Time
-	val []byte
+	Val []byte
 }
 
 func(c *Cache)Add(key string, val []byte){
@@ -28,7 +28,7 @@ func(c *Cache)Add(key string, val []byte){
 
 	c.Entry[key] = cacheEntry{
 		createdAt: time.Now(),
-		val: val,
+		Val: val,
 	}
 }
 
@@ -40,7 +40,7 @@ func(c *Cache)Get(key string) ([]byte, bool){
 	if !exists {
 		return nil, false
 	}
-	return entry.val, true
+	return entry.Val, true
 }
 
 func(c *Cache)readLoop(){
